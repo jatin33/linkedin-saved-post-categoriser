@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkedIn Post Organizer</title>
+  <link rel="stylesheet" href="popup.css">
+  <!-- Include Feather Icons via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>LinkedIn Post Organizer</h1>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="posts-tab">Posts</button>
+      <button class="tab-btn" data-tab="categories-tab">Categories</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Posts Tab -->
+    <section id="posts-tab" class="tab-content active">
+      <div class="filter-bar">
+        <select id="category-filter">
+          <option value="all">All Categories</option>
+        </select>
+        <input type="text" id="search-posts" placeholder="Search posts...">
+      </div>
+      
+      <div class="posts-container">
+        <!-- Posts will be populated here via JS -->
+        <div id="posts-list"></div>
+        
+        <div class="empty-state" id="empty-posts">
+          <i data-feather="bookmark"></i>
+          <p>No categorized posts yet</p>
+          <small>Save posts on LinkedIn and categorize them to see them here</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categories Tab -->
+    <section id="categories-tab" class="tab-content">
+      <div class="categories-header">
+        <h2>Manage Categories</h2>
+        <button id="add-category-btn" class="button primary">
+          <i data-feather="plus"></i> Add Category
+        </button>
+      </div>
+      
+      <div id="categories-list">
+        <!-- Categories will be populated here via JS -->
+      </div>
+      
+      <!-- Add Category Modal -->
+      <div id="add-category-modal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Add New Category</h2>
+            <button class="close-modal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="category-name">Category Name</label>
+              <input type="text" id="category-name" placeholder="e.g., Technical Articles">
+            </div>
+            <div class="form-group">
+              <label for="category-color">Category Color</label>
+              <input type="color" id="category-color" value="#0077B5">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="button secondary close-modal">Cancel</button>
+            <button id="save-category-btn" class="button primary">Save Category</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Visit your <a href="https://www.linkedin.com/my-items/saved-posts/" target="_blank">LinkedIn saved posts</a> to categorize them</p>
+  </footer>
+
+  <!-- Load utilities and main script -->
+  <script src="../utils/storage.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

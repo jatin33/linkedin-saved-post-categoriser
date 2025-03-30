@@ -1,0 +1,61 @@
+/* LinkedIn Post Organizer - Content Styles */
+
+/* Container for categorization UI */
+.linkedin-post-organizer-container {
+  margin-top: 8px;
+  padding: 8px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+}
+
+/* Label for dropdown */
+.linkedin-post-organizer-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  margin-right: 8px;
+}
+
+/* Dropdown styling */
+.linkedin-post-organizer-dropdown {
+  background-color: white;
+  border: 1px solid #0a66c2;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 14px;
+  color: #0a66c2;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.linkedin-post-organizer-dropdown:hover {
+  background-color: #f3f6f8;
+}
+
+.linkedin-post-organizer-dropdown:focus {
+  box-shadow: 0 0 0 1px #0a66c2;
+}
+
+/* Category indicator */
+.linkedin-post-organizer-indicator {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  margin-left: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Highlight for categorized posts */
+.linkedin-post-organizer-categorized {
+  border-left: 3px solid #0a66c2;
+}
+
+/* Adjust LinkedIn styles */
+.feed-shared-social-actions {
+  flex-wrap: wrap;
+}
