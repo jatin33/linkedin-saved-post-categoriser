@@ -1,22 +1,26 @@
 // LinkedIn Post Organizer - Content Script
-// Detects saved posts and adds categorization UI
+// Detects saved posts and adds categorization UI with modal-based selection
 
 // Configuration
 const config = {
   // Selectors for LinkedIn saved posts
   savedPostsPage: '/my-items/saved-posts/',
-  postSelector: '.scaffold-finite-scroll__content > div',
-  postIdAttribute: 'data-id',
-  postTitleSelector: '.feed-shared-update-v2__description',
-  postAuthorSelector: '.feed-shared-actor__name',
-  postContentSelector: '.feed-shared-update-v2__description',
-  saveButtonSelector: '[aria-label="Save post"]',
-  savedIndicatorSelector: '[aria-label="Unsave post"]',
+  postSelector: 'ul[role="list"] > li',
+  postIdAttribute: 'data-chameleon-result-urn',
+  postTitleSelector: '.entity-result__content-summary, .feed-shared-update-v2__description',
+  postAuthorSelector: '.entity-result__content-actor a span[aria-hidden="true"], .feed-shared-actor__name',
+  postContentSelector: '.entity-result__content-summary, .feed-shared-update-v2__description',
   
   // Application specific
-  categoriesDropdownClass: 'linkedin-post-organizer-dropdown',
+  categorizeButtonClass: 'linkedin-post-organizer-categorize-btn',
+  modalClass: 'linkedin-post-organizer-modal',
   categorizedPostClass: 'linkedin-post-organizer-categorized',
+  categoryBadgesClass: 'linkedin-post-organizer-badges',
 };
+
+// Global variables
+let currentModal = null;
+let categories = [];
 
 // Main initialization
 async function initialize() {
@@ -25,11 +29,13 @@ async function initialize() {
     return;
   }
   
-  // Check if we're on saved posts page or main feed
+  // Load categories
+  categories = await StorageUtils.getCategories();
+  
+  // Check if we're on saved posts page
   if (window.location.pathname.includes(config.savedPostsPage)) {
+    console.log('LinkedIn Post Organizer: Initializing on saved posts page');
     initializeSavedPostsPage();
-  } else {
-    initializeMainFeed();
   }
   
   // Listen for page navigation (LinkedIn uses SPA)
@@ -38,8 +44,6 @@ async function initialize() {
 
 // Initialize on LinkedIn saved posts page
 async function initializeSavedPostsPage() {
-  console.log('LinkedIn Post Organizer: Initializing on saved posts page');
-  
   // Wait for posts to load
   await waitForElements(config.postSelector);
   
@@ -54,46 +58,10 @@ async function initializeSavedPostsPage() {
     if (!postId) return;
     
     // Check if post is already categorized
-    const categoryData = categorizedPosts[postId];
+    const postData = categorizedPosts[postId];
     
     // Add categorization UI
-    addCategoryDropdown(post, postId, categoryData);
-  });
-  
-  // Set up observer for dynamically loaded content
-  setupPostsObserver();
-}
-
-// Initialize on main feed
-async function initializeMainFeed() {
-  console.log('LinkedIn Post Organizer: Initializing on main feed');
-  
-  // Wait for posts to load
-  await waitForElements(config.postSelector);
-  
-  // Get all categorized posts from storage
-  const categorizedPosts = await StorageUtils.getCategorizedPosts();
-  
-  // Process each post
-  const posts = document.querySelectorAll(config.postSelector);
-  
-  posts.forEach(async (post) => {
-    const postId = extractPostId(post);
-    if (!postId) return;
-    
-    // Check if post is already categorized
-    const categoryData = categorizedPosts[postId];
-    
-    // Add indicator if post is saved and categorized
-    if (categoryData) {
-      const saveButton = post.querySelector(config.savedIndicatorSelector);
-      if (saveButton) {
-        addCategoryIndicator(post, categoryData);
-      }
-    }
-    
-    // Watch for save button clicks
-    watchSaveButton(post, postId);
+    addCategorizeButton(post, postId, postData);
   });
   
   // Set up observer for dynamically loaded content
@@ -119,7 +87,7 @@ function extractPostId(postElement) {
     const content = postElement.querySelector(config.postContentSelector)?.textContent.trim();
     if (author && content) {
       // Create a hash from author and truncated content
-      postId = `${author}-${content.substring(0, 50)}`.replace(/\s+/g, '-');
+      postId = `${author}-${content.substring(0, 50)}`.replace(/\s+/g, '-').replace(/[^\w-]/g, '');
     }
   }
   
@@ -137,154 +105,248 @@ function extractPostData(postElement) {
   };
 }
 
-// Add categorization dropdown to a saved post
-async function addCategoryDropdown(postElement, postId, existingCategory = null) {
-  // Check if dropdown already exists
-  if (postElement.querySelector(`.${config.categoriesDropdownClass}`)) {
+// Add categorize button to a saved post
+async function addCategorizeButton(postElement, postId, existingPostData = null) {
+  // Check if button already exists
+  if (postElement.querySelector(`.${config.categorizeButtonClass}`)) {
     return;
   }
   
-  // Create container for dropdown
+  // Create container for button and badges
   const container = document.createElement('div');
   container.className = 'linkedin-post-organizer-container';
   
-  // Get categories from storage
-  const categories = await StorageUtils.getCategories();
+  // Create categorize button
+  const button = document.createElement('button');
+  button.className = config.categorizeButtonClass;
+  button.innerHTML = '🏷️ Categorize';
+  button.title = 'Add categories to this post';
   
-  // Create label
-  const label = document.createElement('span');
-  label.className = 'linkedin-post-organizer-label';
-  label.textContent = 'Categorize: ';
-  container.appendChild(label);
-  
-  // Create dropdown
-  const dropdown = document.createElement('select');
-  dropdown.className = config.categoriesDropdownClass;
-  
-  // Add default option
-  const defaultOption = document.createElement('option');
-  defaultOption.value = '';
-  defaultOption.textContent = 'Select a category';
-  dropdown.appendChild(defaultOption);
-  
-  // Add categories
-  categories.forEach(category => {
-    const option = document.createElement('option');
-    option.value = category.id;
-    option.textContent = category.name;
-    option.style.color = category.color;
-    
-    // Select if this post already has this category
-    if (existingCategory && existingCategory.categoryId === category.id) {
-      option.selected = true;
-    }
-    
-    dropdown.appendChild(option);
+  // Handle button click
+  button.addEventListener('click', () => {
+    showCategorizationModal(postId, postElement, existingPostData);
   });
   
-  // Handle category selection
-  dropdown.addEventListener('change', async () => {
-    const selectedCategoryId = dropdown.value;
-    
-    if (selectedCategoryId) {
-      // Get post data
-      const postData = extractPostData(postElement);
-      
-      // Save categorization
-      const result = await StorageUtils.savePostCategory(postId, postData, selectedCategoryId);
-      
-      if (result.success) {
-        // Visual feedback
-        postElement.classList.add(config.categorizedPostClass);
-        
-        // Find the color for the selected category
-        const selectedCategory = categories.find(c => c.id === selectedCategoryId);
-        if (selectedCategory) {
-          addCategoryIndicator(postElement, { categoryId: selectedCategoryId });
-        }
-      }
-    } else {
-      // Remove categorization
-      const result = await StorageUtils.removePostCategory(postId);
-      
-      if (result.success) {
-        // Visual feedback
-        postElement.classList.remove(config.categorizedPostClass);
-        
-        // Remove indicator
-        const indicator = postElement.querySelector('.linkedin-post-organizer-indicator');
-        if (indicator) {
-          indicator.remove();
-        }
-      }
-    }
-  });
+  container.appendChild(button);
   
-  container.appendChild(dropdown);
+  // Add category badges if post is already categorized
+  if (existingPostData && existingPostData.categoryIds && existingPostData.categoryIds.length > 0) {
+    const badgesContainer = createCategoryBadges(existingPostData.categoryIds);
+    container.appendChild(badgesContainer);
+    postElement.classList.add(config.categorizedPostClass);
+  }
   
   // Add container to post
-  const targetElement = postElement.querySelector('.feed-shared-social-actions');
-  if (targetElement) {
+  const targetElement = postElement.querySelector('.feed-shared-social-actions') || 
+                       postElement.querySelector('.social-actions-bar') ||
+                       postElement;
+  
+  if (targetElement === postElement) {
     targetElement.appendChild(container);
   } else {
-    postElement.appendChild(container);
-  }
-  
-  // Mark as categorized if needed
-  if (existingCategory) {
-    postElement.classList.add(config.categorizedPostClass);
-    addCategoryIndicator(postElement, existingCategory);
+    targetElement.parentNode.insertBefore(container, targetElement.nextSibling);
   }
 }
 
-// Add visual indicator for categorized post
-async function addCategoryIndicator(postElement, categoryData) {
-  // Remove existing indicator
-  const existingIndicator = postElement.querySelector('.linkedin-post-organizer-indicator');
-  if (existingIndicator) {
-    existingIndicator.remove();
-  }
+// Create category badges for a post
+function createCategoryBadges(categoryIds) {
+  const badgesContainer = document.createElement('div');
+  badgesContainer.className = config.categoryBadgesClass;
   
-  // Get categories to find color
-  const categories = await StorageUtils.getCategories();
-  const category = categories.find(c => c.id === categoryData.categoryId);
-  
-  if (!category) return;
-  
-  // Create indicator
-  const indicator = document.createElement('div');
-  indicator.className = 'linkedin-post-organizer-indicator';
-  indicator.textContent = category.name;
-  indicator.style.backgroundColor = category.color;
-  
-  // Add to post
-  const actionsContainer = postElement.querySelector('.feed-shared-social-actions');
-  if (actionsContainer) {
-    actionsContainer.appendChild(indicator);
-  } else {
-    postElement.appendChild(indicator);
-  }
-}
-
-// Watch for save button clicks to add categorization UI
-function watchSaveButton(postElement, postId) {
-  const saveButton = postElement.querySelector(config.saveButtonSelector);
-  if (!saveButton) return;
-  
-  saveButton.addEventListener('click', async () => {
-    // Wait for save action to complete
-    setTimeout(async () => {
-      // Check if post is now saved
-      const savedIndicator = postElement.querySelector(config.savedIndicatorSelector);
-      if (savedIndicator) {
-        // Post is saved, add categorization UI
-        const postData = extractPostData(postElement);
-        const existingCategory = await StorageUtils.getPostCategory(postId);
-        
-        addCategoryDropdown(postElement, postId, existingCategory);
-      }
-    }, 1000);
+  categoryIds.forEach(categoryId => {
+    const category = categories.find(c => c.id === categoryId);
+    if (category) {
+      const badge = document.createElement('span');
+      badge.className = 'linkedin-post-organizer-badge';
+      badge.textContent = category.name;
+      badge.style.backgroundColor = category.color;
+      badge.style.color = getContrastColor(category.color);
+      badgesContainer.appendChild(badge);
+    }
   });
+  
+  return badgesContainer;
+}
+
+// Show categorization modal
+async function showCategorizationModal(postId, postElement, existingPostData = null) {
+  // Close existing modal if open
+  if (currentModal) {
+    currentModal.remove();
+  }
+  
+  // Get current categories for this post
+  const currentCategories = existingPostData?.categoryIds || [];
+  
+  // Create modal
+  const modal = document.createElement('div');
+  modal.className = config.modalClass;
+  modal.innerHTML = `
+    <div class="linkedin-post-organizer-modal-content">
+      <div class="linkedin-post-organizer-modal-header">
+        <h3>Categorize Post</h3>
+        <button class="linkedin-post-organizer-modal-close">&times;</button>
+      </div>
+      <div class="linkedin-post-organizer-modal-body">
+        <div class="linkedin-post-organizer-categories-list">
+          ${categories.map(category => `
+            <label class="linkedin-post-organizer-category-item">
+              <input type="checkbox" value="${category.id}" ${currentCategories.includes(category.id) ? 'checked' : ''}>
+              <span class="linkedin-post-organizer-category-color" style="background-color: ${category.color}"></span>
+              <span class="linkedin-post-organizer-category-name">${category.name}</span>
+            </label>
+          `).join('')}
+        </div>
+        <div class="linkedin-post-organizer-new-category">
+          <h4>Create New Category</h4>
+          <div class="linkedin-post-organizer-new-category-form">
+            <input type="text" id="linkedin-post-organizer-new-category-name" placeholder="Category name" maxlength="20">
+            <input type="color" id="linkedin-post-organizer-new-category-color" value="#0077B5">
+            <button id="linkedin-post-organizer-add-category">Add</button>
+          </div>
+        </div>
+      </div>
+      <div class="linkedin-post-organizer-modal-footer">
+        <button class="linkedin-post-organizer-btn-secondary linkedin-post-organizer-modal-close">Cancel</button>
+        <button class="linkedin-post-organizer-btn-primary" id="linkedin-post-organizer-save-categories">Save Categories</button>
+      </div>
+    </div>
+  `;
+  
+  // Add modal to page
+  document.body.appendChild(modal);
+  currentModal = modal;
+  
+  // Setup modal event listeners
+  setupModalEventListeners(modal, postId, postElement);
+}
+
+// Setup event listeners for the modal
+function setupModalEventListeners(modal, postId, postElement) {
+  // Close modal events
+  const closeButtons = modal.querySelectorAll('.linkedin-post-organizer-modal-close');
+  closeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      modal.remove();
+      currentModal = null;
+    });
+  });
+  
+  // Click outside to close
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+      currentModal = null;
+    }
+  });
+  
+  // Add new category
+  const addCategoryBtn = modal.querySelector('#linkedin-post-organizer-add-category');
+  const categoryNameInput = modal.querySelector('#linkedin-post-organizer-new-category-name');
+  const categoryColorInput = modal.querySelector('#linkedin-post-organizer-new-category-color');
+  
+  addCategoryBtn.addEventListener('click', async () => {
+    const name = categoryNameInput.value.trim();
+    const color = categoryColorInput.value;
+    
+    if (!name) {
+      alert('Please enter a category name');
+      return;
+    }
+    
+    // Check if category already exists
+    if (categories.find(c => c.name.toLowerCase() === name.toLowerCase())) {
+      alert('Category already exists');
+      return;
+    }
+    
+    const result = await StorageUtils.addCategory(name, color);
+    if (result.success) {
+      // Update local categories
+      categories.push(result.category);
+      
+      // Add new category to the modal
+      const categoriesList = modal.querySelector('.linkedin-post-organizer-categories-list');
+      const newCategoryItem = document.createElement('label');
+      newCategoryItem.className = 'linkedin-post-organizer-category-item';
+      newCategoryItem.innerHTML = `
+        <input type="checkbox" value="${result.category.id}" checked>
+        <span class="linkedin-post-organizer-category-color" style="background-color: ${color}"></span>
+        <span class="linkedin-post-organizer-category-name">${name}</span>
+      `;
+      categoriesList.appendChild(newCategoryItem);
+      
+      // Clear form
+      categoryNameInput.value = '';
+      categoryColorInput.value = '#0077B5';
+    } else {
+      alert('Failed to create category');
+    }
+  });
+  
+  // Save categories
+  const saveCategoriesBtn = modal.querySelector('#linkedin-post-organizer-save-categories');
+  saveCategoriesBtn.addEventListener('click', async () => {
+    const selectedCategories = Array.from(modal.querySelectorAll('input[type="checkbox"]:checked'))
+      .map(checkbox => checkbox.value);
+    
+    // Extract post data
+    const postData = extractPostData(postElement);
+    
+    // Save categorization
+    const result = await StorageUtils.savePostCategory(postId, postData, selectedCategories);
+    
+    if (result.success) {
+      // Update UI
+      updatePostCategorization(postElement, selectedCategories);
+      
+      // Close modal
+      modal.remove();
+      currentModal = null;
+    } else {
+      alert('Failed to save categories');
+    }
+  });
+  
+  // Enter key on category name input
+  categoryNameInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      addCategoryBtn.click();
+    }
+  });
+}
+
+// Update post categorization in UI
+function updatePostCategorization(postElement, categoryIds) {
+  // Remove existing badges
+  const existingBadges = postElement.querySelector(`.${config.categoryBadgesClass}`);
+  if (existingBadges) {
+    existingBadges.remove();
+  }
+  
+  // Add new badges if categories selected
+  if (categoryIds.length > 0) {
+    const container = postElement.querySelector('.linkedin-post-organizer-container');
+    const badgesContainer = createCategoryBadges(categoryIds);
+    container.appendChild(badgesContainer);
+    postElement.classList.add(config.categorizedPostClass);
+  } else {
+    postElement.classList.remove(config.categorizedPostClass);
+  }
+}
+
+// Get contrasting text color for background
+function getContrastColor(hexColor) {
+  // Convert hex to RGB
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
+  
+  // Calculate luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  
+  // Return black or white based on luminance
+  return luminance > 0.5 ? '#000000' : '#ffffff';
 }
 
 // Set up observer for dynamically loaded posts
@@ -296,9 +358,9 @@ function setupPostsObserver() {
         for (const node of mutation.addedNodes) {
           if (node.nodeType === Node.ELEMENT_NODE) {
             // Check if node is a post or contains posts
-            if (node.matches(config.postSelector)) {
+            if (node.matches && node.matches(config.postSelector)) {
               processNewPost(node);
-            } else {
+            } else if (node.querySelectorAll) {
               const posts = node.querySelectorAll(config.postSelector);
               posts.forEach(processNewPost);
             }
@@ -309,7 +371,7 @@ function setupPostsObserver() {
   });
   
   // Start observing
-  const container = document.querySelector('.scaffold-finite-scroll__content');
+  const container = document.querySelector('.scaffold-finite-scroll__content') || document.body;
   if (container) {
     observer.observe(container, { childList: true, subtree: true });
   }
@@ -322,20 +384,8 @@ async function processNewPost(postElement) {
   
   // Check if we're on saved posts page
   if (window.location.pathname.includes(config.savedPostsPage)) {
-    const categoryData = await StorageUtils.getPostCategory(postId);
-    addCategoryDropdown(postElement, postId, categoryData);
-  } else {
-    // Main feed
-    const categoryData = await StorageUtils.getPostCategory(postId);
-    
-    if (categoryData) {
-      const saveButton = postElement.querySelector(config.savedIndicatorSelector);
-      if (saveButton) {
-        addCategoryIndicator(postElement, categoryData);
-      }
-    }
-    
-    watchSaveButton(postElement, postId);
+    const postData = await StorageUtils.getPostCategory(postId);
+    addCategorizeButton(postElement, postId, postData);
   }
 }
 
@@ -353,8 +403,6 @@ function observeUrlChanges() {
       setTimeout(() => {
         if (window.location.pathname.includes(config.savedPostsPage)) {
           initializeSavedPostsPage();
-        } else {
-          initializeMainFeed();
         }
       }, 1000);
     }

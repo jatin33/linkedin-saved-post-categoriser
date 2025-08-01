@@ -27,17 +27,17 @@ const StorageUtils = {
   },
   
   /**
-   * Save post with category
+   * Save post with categories
    * @param {string} postId - Unique identifier for the post
    * @param {Object} postData - Data about the post
-   * @param {string} categoryId - ID of the category
+   * @param {Array} categoryIds - Array of category IDs
    * @returns {Promise<Object>} Success status
    */
-  savePostCategory: async function(postId, postData, categoryId) {
+  savePostCategory: async function(postId, postData, categoryIds) {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage({
         action: 'savePostCategory',
-        data: { postId, postData, categoryId }
+        data: { postId, postData, categoryIds }
       }, (response) => {
         resolve(response);
       });
@@ -101,5 +101,19 @@ const StorageUtils = {
   getPostCategory: async function(postId) {
     const posts = await this.getCategorizedPosts();
     return posts[postId] || null;
+  },
+
+  /**
+   * Update categories for an existing post
+   * @param {string} postId - Unique identifier for the post
+   * @param {Array} categoryIds - Array of category IDs
+   * @returns {Promise<Object>} Success status
+   */
+  updatePostCategories: async function(postId, categoryIds) {
+    const posts = await this.getCategorizedPosts();
+    if (posts[postId]) {
+      return this.savePostCategory(postId, posts[postId], categoryIds);
+    }
+    return { success: false, error: 'Post not found' };
   }
 };

@@ -1,61 +1,372 @@
-/* LinkedIn Post Organizer - Content Styles */
+/* LinkedIn Post Organizer - Content Script Styles */
 
-/* Container for categorization UI */
+/* Container for categorize button and badges */
 .linkedin-post-organizer-container {
   margin-top: 8px;
   padding: 8px;
   border-top: 1px solid #e0e0e0;
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Categorize button */
+.linkedin-post-organizer-categorize-btn {
+  background: #0077b5;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.linkedin-post-organizer-categorize-btn:hover {
+  background: #005582;
+}
+
+/* Category badges container */
+.linkedin-post-organizer-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Individual category badge */
+.linkedin-post-organizer-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+/* Modal overlay */
+.linkedin-post-organizer-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  backdrop-filter: blur(2px);
+}
+
+/* Modal content */
+.linkedin-post-organizer-modal-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Modal header */
+.linkedin-post-organizer-modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
 }
 
-/* Label for dropdown */
-.linkedin-post-organizer-label {
+.linkedin-post-organizer-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.linkedin-post-organizer-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.linkedin-post-organizer-modal-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+/* Modal body */
+.linkedin-post-organizer-modal-body {
+  padding: 20px 24px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Categories list */
+.linkedin-post-organizer-categories-list {
+  margin-bottom: 24px;
+}
+
+.linkedin-post-organizer-category-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  cursor: pointer;
+  border-radius: 6px;
+  margin: 4px 0;
+  transition: background-color 0.2s ease;
+}
+
+.linkedin-post-organizer-category-item:hover {
+  background: #f8f9fa;
+}
+
+.linkedin-post-organizer-category-item input[type="checkbox"] {
+  margin: 0 12px 0 0;
+  transform: scale(1.1);
+}
+
+.linkedin-post-organizer-category-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 8px;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.linkedin-post-organizer-category-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* New category section */
+.linkedin-post-organizer-new-category {
+  border-top: 1px solid #e0e0e0;
+  padding-top: 20px;
+}
+
+.linkedin-post-organizer-new-category h4 {
+  margin: 0 0 12px 0;
   font-size: 14px;
   font-weight: 600;
   color: #666;
-  margin-right: 8px;
 }
 
-/* Dropdown styling */
-.linkedin-post-organizer-dropdown {
-  background-color: white;
-  border: 1px solid #0a66c2;
-  border-radius: 4px;
-  padding: 6px 10px;
+.linkedin-post-organizer-new-category-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.linkedin-post-organizer-new-category-form input[type="text"] {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
   font-size: 14px;
-  color: #0a66c2;
   outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.linkedin-post-organizer-new-category-form input[type="text"]:focus {
+  border-color: #0077b5;
+  box-shadow: 0 0 0 2px rgba(0, 119, 181, 0.1);
+}
+
+.linkedin-post-organizer-new-category-form input[type="color"] {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+}
+
+.linkedin-post-organizer-new-category-form button {
+  padding: 8px 16px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.linkedin-post-organizer-new-category-form button:hover {
+  background: #218838;
+}
+
+/* Modal footer */
+.linkedin-post-organizer-modal-footer {
+  padding: 16px 24px 20px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.linkedin-post-organizer-btn-secondary {
+  padding: 10px 20px;
+  background: #f8f9fa;
+  color: #666;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.linkedin-post-organizer-dropdown:hover {
-  background-color: #f3f6f8;
+.linkedin-post-organizer-btn-secondary:hover {
+  background: #e9ecef;
+  color: #333;
 }
 
-.linkedin-post-organizer-dropdown:focus {
-  box-shadow: 0 0 0 1px #0a66c2;
-}
-
-/* Category indicator */
-.linkedin-post-organizer-indicator {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 600;
+.linkedin-post-organizer-btn-primary {
+  padding: 10px 20px;
+  background: #0077b5;
   color: white;
-  margin-left: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
-/* Highlight for categorized posts */
+.linkedin-post-organizer-btn-primary:hover {
+  background: #005582;
+}
+
+/* Categorized post styling */
 .linkedin-post-organizer-categorized {
-  border-left: 3px solid #0a66c2;
+  position: relative;
 }
 
-/* Adjust LinkedIn styles */
-.feed-shared-social-actions {
-  flex-wrap: wrap;
+.linkedin-post-organizer-categorized::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, #0077b5, #005582);
+  border-radius: 0 2px 2px 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .linkedin-post-organizer-modal-content {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .linkedin-post-organizer-modal-header,
+  .linkedin-post-organizer-modal-body,
+  .linkedin-post-organizer-modal-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  
+  .linkedin-post-organizer-new-category-form {
+    flex-wrap: wrap;
+  }
+  
+  .linkedin-post-organizer-new-category-form input[type="text"] {
+    min-width: 150px;
+  }
+}
+
+/* Dark theme support (if LinkedIn switches to dark mode) */
+@media (prefers-color-scheme: dark) {
+  .linkedin-post-organizer-modal-content {
+    background: #1a1a1a;
+    color: #e0e0e0;
+  }
+  
+  .linkedin-post-organizer-modal-header {
+    border-bottom-color: #333;
+  }
+  
+  .linkedin-post-organizer-modal-header h3 {
+    color: #e0e0e0;
+  }
+  
+  .linkedin-post-organizer-modal-close {
+    color: #ccc;
+  }
+  
+  .linkedin-post-organizer-modal-close:hover {
+    background: #333;
+    color: #fff;
+  }
+  
+  .linkedin-post-organizer-new-category {
+    border-top-color: #333;
+  }
+  
+  .linkedin-post-organizer-new-category h4 {
+    color: #ccc;
+  }
+  
+  .linkedin-post-organizer-new-category-form input[type="text"] {
+    background: #2a2a2a;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+  
+  .linkedin-post-organizer-new-category-form input[type="text"]:focus {
+    border-color: #0077b5;
+  }
+  
+  .linkedin-post-organizer-modal-footer {
+    border-top-color: #333;
+  }
+  
+  .linkedin-post-organizer-btn-secondary {
+    background: #333;
+    color: #ccc;
+    border-color: #444;
+  }
+  
+  .linkedin-post-organizer-btn-secondary:hover {
+    background: #444;
+    color: #fff;
+  }
+  
+  .linkedin-post-organizer-category-item:hover {
+    background: #2a2a2a;
+  }
+  
+  .linkedin-post-organizer-category-name {
+    color: #e0e0e0;
+  }
 }

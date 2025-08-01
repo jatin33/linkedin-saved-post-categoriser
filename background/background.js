@@ -43,15 +43,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   
   if (message.action === 'savePostCategory') {
-    const { postId, postData, categoryId } = message.data;
+    const { postId, postData, categoryIds } = message.data;
     
     chrome.storage.sync.get('categorizedPosts', (data) => {
       const categorizedPosts = data.categorizedPosts || {};
       
       categorizedPosts[postId] = {
         ...postData,
-        categoryId,
-        dateAdded: new Date().toISOString()
+        categoryIds: categoryIds || [],
+        dateAdded: categorizedPosts[postId]?.dateAdded || new Date().toISOString(),
+        dateModified: new Date().toISOString()
       };
       
       chrome.storage.sync.set({ categorizedPosts }, () => {
@@ -108,8 +109,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       
       // Update posts that had this category
       Object.keys(categorizedPosts).forEach(postId => {
-        if (categorizedPosts[postId].categoryId === categoryId) {
-          categorizedPosts[postId].categoryId = 'other'; // Default to 'other'
+        if (categorizedPosts[postId].categoryIds && categorizedPosts[postId].categoryIds.includes(categoryId)) {
+          // Remove the deleted category from the post's category list
+          categorizedPosts[postId].categoryIds = categorizedPosts[postId].categoryIds.filter(id => id !== categoryId);
+          // If no categories left, add 'other' as default
+          if (categorizedPosts[postId].categoryIds.length === 0) {
+            categorizedPosts[postId].categoryIds = ['other'];
+          }
+          categorizedPosts[postId].dateModified = new Date().toISOString();
+        }
+        // Handle legacy posts with single categoryId
+        else if (categorizedPosts[postId].categoryId === categoryId) {
+          categorizedPosts[postId].categoryIds = ['other'];
+          delete categorizedPosts[postId].categoryId; // Remove legacy field
+          categorizedPosts[postId].dateModified = new Date().toISOString();
         }
       });
       
