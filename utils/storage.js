@@ -115,5 +115,17 @@ const StorageUtils = {
       return this.savePostCategory(postId, posts[postId], categoryIds);
     }
     return { success: false, error: 'Post not found' };
+  },
+
+  /**
+   * Reset all categorized posts and categories to default.
+   * @returns {Promise<Object>} Success status
+   */
+  resetAllData: async function() {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: 'resetAllData' }, (response) => {
+        resolve(response);
+      });
+    });
   }
 };

@@ -146,4 +146,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
     return true;
   }
+
+  if (message.action === 'resetAllData') {
+    chrome.storage.sync.set({
+      categories: [
+        { id: 'work', name: 'Work', color: '#0077B5' },
+        { id: 'learning', name: 'Learning', color: '#5851DB' },
+        { id: 'inspiration', name: 'Inspiration', color: '#FFC107' },
+        { id: 'networking', name: 'Networking', color: '#4CAF50' },
+        { id: 'other', name: 'Other', color: '#9E9E9E' }
+      ],
+      categorizedPosts: {}
+    }, () => {
+      sendResponse({ success: true });
+    });
+    return true;
+  }
 });

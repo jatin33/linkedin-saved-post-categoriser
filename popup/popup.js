@@ -9,10 +9,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupTabs();
   
   // Set up category management
-  setupCategoryManagement();
+  await setupCategoryManagement();
   
   // Load and display posts
   await loadPosts();
+
+  // Set up reset all data functionality
+  setupResetAllData();
   
   // Set up search and filtering
   setupFilters();
@@ -34,6 +37,24 @@ function setupTabs() {
       const tabId = button.getAttribute('data-tab');
       document.getElementById(tabId).classList.add('active');
     });
+  });
+}
+
+// Set up reset all data functionality
+function setupResetAllData() {
+  const resetBtn = document.getElementById('reset-all-data-btn');
+  resetBtn.addEventListener('click', async () => {
+    if (confirm('Are you sure you want to reset all categorized posts and categories? This action cannot be undone.')) {
+      const result = await StorageUtils.resetAllData();
+      if (result.success) {
+        alert('All data has been reset to default.');
+        // Reload posts and categories to reflect the reset
+        await loadCategories();
+        await loadPosts();
+      } else {
+        alert('Failed to reset data.');
+      }
+    }
   });
 }
 

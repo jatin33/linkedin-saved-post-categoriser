@@ -8,6 +8,7 @@
    - Service worker background script functional
    - Content script injection working
    - **Side Panel Interface**: Successfully migrated from popup to side panel.
+   - **Reset All Bookmarks**: Functionality to reset all categorized posts and categories to default.
 
 2. **Storage System** ✅
    - Chrome sync storage integration
@@ -34,11 +35,12 @@
    - Visual feedback and indicators
 
 ### Current Development State
-- **Code Quality**: Production-ready with proper error handling
-- **Architecture**: Scalable message-passing design
+- **Code Quality**: Production-ready with proper error handling.
+- **Architecture**: Scalable message-passing design.
 - **UI/UX**: LinkedIn-native integration style, now with a persistent side panel.
-- **Documentation**: Comprehensive code comments
-- **Testing Ready**: All components implemented for manual testing
+- **Documentation**: Comprehensive code comments.
+- **Testing Ready**: All components implemented for manual testing.
+- **Post URL in Modal**: Added a read-only field to display the LinkedIn post URL in the categorization modal.
 
 ### Known Technical Achievements
 1. **Post ID Extraction**: Robust multi-fallback system
@@ -52,12 +54,13 @@
 **Nothing critical** - extension is feature-complete for core use case
 
 ### Potential Future Enhancements
-- [ ] Bulk operations for multiple posts
-- [ ] Advanced analytics and insights
-- [ ] Export/import functionality
-- [ ] Custom category icons
-- [ ] Integration with external note-taking tools
-- [ ] Advanced search with filters (date, author, etc.)
+- [ ] Bulk operations for multiple posts.
+- [ ] Advanced analytics and insights.
+- [ ] Export/import functionality.
+- [ ] Custom category icons.
+- [ ] Integration with external note-taking tools.
+- [ ] Advanced search with filters (date, author, etc.).
+- [ ] Make the post URL field in the modal editable if users need to manually correct/add URLs.
 
 ### Current Issues/Limitations
 **None blocking** - ready for testing phase
@@ -97,10 +100,12 @@ The extension is **complete and ready for**:
 4. Chrome Web Store preparation
 
 ### Success Metrics Achieved
-✅ Seamless LinkedIn integration  
-✅ Intuitive categorization workflow  
-✅ Cross-device synchronization  
-✅ Professional UI design  
-✅ Robust error handling  
-✅ Scalable architecture
+✅ Seamless LinkedIn integration.
+✅ Intuitive categorization workflow.
+✅ Cross-device synchronization.
+✅ Professional UI design.
+✅ Robust error handling.
+✅ Scalable architecture.
 ✅ Side panel functionality implemented and working as expected.
+✅ Reset all bookmarks functionality implemented.
+✅ LinkedIn post URL displayed in categorization modal.

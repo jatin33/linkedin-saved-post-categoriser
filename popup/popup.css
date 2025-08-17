@@ -407,3 +407,22 @@ footer a {
 footer a:hover {
   text-decoration: underline;
 }
+
+/* Categories Footer */
+.categories-footer {
+  padding: 15px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: center;
+  margin-top: 15px;
+}
+
+/* Danger Button */
+.button.danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.button.danger:hover {
+  background-color: #c82333;
+}

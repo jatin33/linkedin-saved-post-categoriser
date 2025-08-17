@@ -96,11 +96,14 @@ function extractPostId(postElement) {
 
 // Extract post data for storage
 function extractPostData(postElement) {
+  const postLinkElement = postElement.querySelector('a[href*="/posts/"], a[href*="/feed/update/"]');
+  const postUrl = postLinkElement ? postLinkElement.href : ''; // Default to empty string if no specific post URL found
+
   return {
     title: postElement.querySelector(config.postTitleSelector)?.textContent.trim() || 'Untitled Post',
     author: postElement.querySelector(config.postAuthorSelector)?.textContent.trim() || 'Unknown Author',
     content: postElement.querySelector(config.postContentSelector)?.textContent.trim() || '',
-    url: window.location.href,
+    url: postUrl, // Use the extracted post URL
     timestamp: new Date().toISOString()
   };
 }
@@ -177,7 +180,8 @@ async function showCategorizationModal(postId, postElement, existingPostData = n
   
   // Get current categories for this post
   const currentCategories = existingPostData?.categoryIds || [];
-  
+  const currentPostUrl = existingPostData?.url || extractPostData(postElement).url; // Use existing URL or extract new one
+
   // Create modal
   const modal = document.createElement('div');
   modal.className = config.modalClass;
@@ -188,6 +192,11 @@ async function showCategorizationModal(postId, postElement, existingPostData = n
         <button class="linkedin-post-organizer-modal-close">&times;</button>
       </div>
       <div class="linkedin-post-organizer-modal-body">
+        <div class="linkedin-post-organizer-form-group">
+          <label for="linkedin-post-organizer-post-url">Post Link <span style="color: red;">*</span></label>
+          <input type="text" id="linkedin-post-organizer-post-url" value="${currentPostUrl}" placeholder="Enter LinkedIn Post URL (required)" required>
+          <small style="color: #666; font-size: 12px;">This field is required. Please enter a valid LinkedIn post URL.</small>
+        </div>
         <div class="linkedin-post-organizer-categories-list">
           ${categories.map(category => `
             <label class="linkedin-post-organizer-category-item">
@@ -287,12 +296,33 @@ function setupModalEventListeners(modal, postId, postElement) {
   // Save categories
   const saveCategoriesBtn = modal.querySelector('#linkedin-post-organizer-save-categories');
   saveCategoriesBtn.addEventListener('click', async () => {
+    // Get the URL from the input field in the modal
+    const postUrlInput = modal.querySelector('#linkedin-post-organizer-post-url');
+    const postUrl = postUrlInput ? postUrlInput.value.trim() : '';
+    
+    // Validate that URL is provided
+    if (!postUrl) {
+      alert('Please enter a LinkedIn post URL. This field is required.');
+      postUrlInput.focus();
+      return;
+    }
+    
+    // Validate that it's a LinkedIn URL
+    if (!isValidLinkedInUrl(postUrl)) {
+      alert('Please enter a valid LinkedIn post URL (should contain linkedin.com).');
+      postUrlInput.focus();
+      return;
+    }
+    
     const selectedCategories = Array.from(modal.querySelectorAll('input[type="checkbox"]:checked'))
       .map(checkbox => checkbox.value);
     
     // Extract post data
     const postData = extractPostData(postElement);
     
+    // Use the URL from the input field
+    postData.url = postUrl;
+
     // Save categorization
     const result = await StorageUtils.savePostCategory(postId, postData, selectedCategories);
     
@@ -314,6 +344,40 @@ function setupModalEventListeners(modal, postId, postElement) {
       addCategoryBtn.click();
     }
   });
+  
+  // Real-time URL validation
+  const postUrlInput = modal.querySelector('#linkedin-post-organizer-post-url');
+  if (postUrlInput) {
+    postUrlInput.addEventListener('input', (e) => {
+      const url = e.target.value.trim();
+      const saveBtn = modal.querySelector('#linkedin-post-organizer-save-categories');
+      
+      if (url && isValidLinkedInUrl(url)) {
+        e.target.style.borderColor = '#28a745';
+        e.target.style.boxShadow = '0 0 0 0.2rem rgba(40, 167, 69, 0.25)';
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = '1';
+      } else if (url) {
+        e.target.style.borderColor = '#dc3545';
+        e.target.style.boxShadow = '0 0 0 0.2rem rgba(220, 53, 69, 0.25)';
+        saveBtn.disabled = true;
+        saveBtn.style.opacity = '0.6';
+      } else {
+        e.target.style.borderColor = '#ddd';
+        e.target.style.boxShadow = 'none';
+        saveBtn.disabled = true;
+        saveBtn.style.opacity = '0.6';
+      }
+    });
+    
+    // Initial validation check
+    const initialUrl = postUrlInput.value.trim();
+    const saveBtn = modal.querySelector('#linkedin-post-organizer-save-categories');
+    if (!initialUrl || !isValidLinkedInUrl(initialUrl)) {
+      saveBtn.disabled = true;
+      saveBtn.style.opacity = '0.6';
+    }
+  }
 }
 
 // Update post categorization in UI
@@ -332,6 +396,18 @@ function updatePostCategorization(postElement, categoryIds) {
     postElement.classList.add(config.categorizedPostClass);
   } else {
     postElement.classList.remove(config.categorizedPostClass);
+  }
+}
+
+// Validate LinkedIn URL
+function isValidLinkedInUrl(url) {
+  if (!url) return false;
+  
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname.includes('linkedin.com');
+  } catch (e) {
+    return false;
   }
 }
 

@@ -1,9 +1,9 @@
 # Active Context: LinkedIn Post Organizer
 
 ## Current Project State
-**Status**: Core functionality implemented and side panel integration complete
+**Status**: Core functionality implemented, side panel integration complete, and reset all bookmarks option added.
 **Last Updated**: August 17, 2025
-**Current Focus**: Side panel integration and memory bank documentation
+**Current Focus**: Adding LinkedIn post URL to categorization modal and memory bank documentation.
 
 ## Recent Implementation
 The extension has been fully implemented with all core components, and the UI has been migrated from a popup to a side panel:
@@ -14,6 +14,7 @@ The extension has been fully implemented with all core components, and the UI ha
    - Message handling for all CRUD operations
    - Default categories initialization on install
    - **Side Panel Integration**: Added `chrome.action.onClicked` listener to open the side panel and `chrome.sidePanel.setOptions` to enable it on installation.
+   - **Reset All Data**: Added message listener to clear all categorized posts and reset categories to default.
 
 2. **Content Script** (`content/content.js`) 
    - LinkedIn DOM integration for both saved posts page and main feed
@@ -51,10 +52,10 @@ The extension has been fully implemented with all core components, and the UI ha
 5. **Side Panel as Main UI**: Replaced the traditional popup with a persistent side panel for improved user experience.
 
 ## Next Steps for Development
-1. **Testing Phase**: Load extension and test on LinkedIn (side panel functionality confirmed).
-2. **Edge Case Handling**: Verify post ID extraction across different post types  
-3. **Performance Optimization**: Monitor impact on LinkedIn page load
-4. **User Experience**: Validate categorization workflow feels natural within the side panel.
+1. **Testing Phase**: Load extension and test on LinkedIn (side panel functionality confirmed, reset all data, and post URL in modal).
+2. **Edge Case Handling**: Verify post ID and URL extraction across different post types.
+3. **Performance Optimization**: Monitor impact on LinkedIn page load.
+4. **User Experience**: Validate categorization workflow feels natural within the side panel, including the new URL field.
 
 ## Key Implementation Insights
 - LinkedIn's infinite scroll requires careful observer setup
@@ -64,14 +65,16 @@ The extension has been fully implemented with all core components, and the UI ha
 - **Side Panel**: Requires specific `manifest.json` configuration and explicit `chrome.sidePanel.open` and `chrome.sidePanel.setOptions` calls in the background script.
 
 ## Development Notes
-- Extension ready for manual testing in Chrome Developer Mode
-- All required permissions configured in manifest.json
-- Default categories (Work, Learning, Inspiration, Networking, Other) pre-configured
-- Side panel provides complete category and post management interface
+- Extension ready for manual testing in Chrome Developer Mode.
+- All required permissions configured in manifest.json.
+- Default categories (Work, Learning, Inspiration, Networking, Other) pre-configured.
+- Side panel provides complete category and post management interface.
+- **Reset All Bookmarks**: New functionality added to clear all user data.
+- **Post URL in Modal**: Added a read-only field to display the LinkedIn post URL in the categorization modal.
 
 ## Potential Enhancements (Future)
-- Bulk categorization features
-- Export/import functionality  
-- Category analytics and insights
-- Advanced search with date ranges
-- Integration with other productivity tools
+- Bulk operations for multiple posts.
+- Export/import functionality.
+- Category analytics and insights.
+- Advanced search with filters (date, author, etc.).
+- Make the post URL field in the modal editable if users need to manually correct/add URLs.
