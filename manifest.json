@@ -5,7 +5,8 @@
   "manifest_version": 3,
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "sidePanel"
   ],
   "host_permissions": [
     "https://www.linkedin.com/*"
@@ -21,12 +22,14 @@
     }
   ],
   "action": {
-    "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "icons/icon16.svg",
       "48": "icons/icon48.svg",
       "128": "icons/icon128.svg"
     }
+  },
+  "side_panel": {
+    "default_path": "popup/popup.html"
   },
   "icons": {
     "16": "icons/icon16.svg",

@@ -24,6 +24,17 @@ chrome.runtime.onInstalled.addListener(async () => {
       categorizedPosts: {}
     });
   }
+
+  // Enable the side panel for all hosts on installation
+  chrome.sidePanel.setOptions({
+    enabled: true
+  });
+});
+
+// Listen for clicks on the extension action (icon)
+chrome.action.onClicked.addListener(async (tab) => {
+  // Open the side panel when the extension icon is clicked for the current tab
+  await chrome.sidePanel.open({ tabId: tab.id });
 });
 
 // Listen for messages from content scripts or popup
