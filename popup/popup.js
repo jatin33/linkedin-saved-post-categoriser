@@ -16,6 +16,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Set up reset all data functionality
   setupResetAllData();
+
+  // Listen for storage changes to update the UI in real-time
+  chrome.storage.onChanged.addListener(async (changes, namespace) => {
+    if (namespace === 'sync') {
+      if (changes.categorizedPosts || changes.categories) {
+        console.log('Storage change detected, reloading posts and categories...');
+        await loadCategories(); // Reload categories in case they changed
+        await loadPosts(); // Reload posts to reflect new categories or post changes
+      }
+    }
+  });
 });
 
 // Tab switching functionality

@@ -3,7 +3,7 @@
 ## Current Project State
 **Status**: Core functionality implemented, side panel integration complete, reset all bookmarks option added, and author filter implemented.
 **Last Updated**: August 23, 2025
-**Current Focus**: Memory bank documentation update.
+**Current Focus**: Ensuring real-time synchronization between content script and side panel.
 
 ## Recent Implementation
 The extension has been fully implemented with all core components, and the UI has been migrated from a popup to a side panel:
@@ -28,6 +28,7 @@ The extension has been fully implemented with all core components, and the UI ha
    - Category filtering functionality
    - Modal for adding new categories with color picker
    - **UI Adjustments**: Removed fixed width/height from `body` in `popup.css` and removed the `<footer>` from `popup.html` for better side panel adaptation.
+   - **Real-time Synchronization**: Added `chrome.storage.onChanged` listener to `popup.js` to automatically refresh posts and categories when storage data is updated by other parts of the extension (e.g., content script).
 
 4. **Storage Utilities** (`utils/storage.js`)
    - Wrapper functions for Chrome storage operations
@@ -43,6 +44,7 @@ The extension has been fully implemented with all core components, and the UI ha
 - **Progressive Enhancement**: Adds features without breaking LinkedIn UX
 - **Graceful Degradation**: Handles missing DOM elements and edge cases
 - **Side Panel API**: Utilizes Chrome's Side Panel API for the main UI.
+- **Real-time UI Updates**: Implemented `chrome.storage.onChanged` in the side panel for immediate reflection of data changes.
 
 ## Active Architecture Decisions
 1. **Post ID Strategy**: Multi-layered approach (data-id → data-urn → content hash)
@@ -50,9 +52,10 @@ The extension has been fully implemented with all core components, and the UI ha
 3. **UI Integration**: Injects into LinkedIn's social action areas
 4. **Navigation Handling**: Detects SPA navigation via URL monitoring
 5. **Side Panel as Main UI**: Replaced the traditional popup with a persistent side panel for improved user experience.
+6. **Real-time Sync**: Implemented `chrome.storage.onChanged` listener in `popup.js` for immediate UI updates.
 
 ## Next Steps for Development
-1. **Testing Phase**: Load extension and test on LinkedIn (side panel functionality confirmed, reset all data, and post URL in modal).
+1. **Testing Phase**: Load extension and test on LinkedIn (side panel functionality confirmed, reset all data, post URL in modal, and **verify real-time updates from content script to side panel**).
 2. **Edge Case Handling**: Verify post ID and URL extraction across different post types.
 3. **Performance Optimization**: Monitor impact on LinkedIn page load.
 4. **User Experience**: Validate categorization workflow feels natural within the side panel, including the new URL field.
@@ -63,6 +66,7 @@ The extension has been fully implemented with all core components, and the UI ha
 - SPA navigation needs URL change detection
 - Chrome sync storage has size limitations to consider
 - **Side Panel**: Requires specific `manifest.json` configuration and explicit `chrome.sidePanel.open` and `chrome.sidePanel.setOptions` calls in the background script.
+- **Real-time Sync**: `chrome.storage.onChanged` is crucial for keeping the side panel UI in sync with changes made by other extension components.
 
 ## Development Notes
 - Extension ready for manual testing in Chrome Developer Mode.
