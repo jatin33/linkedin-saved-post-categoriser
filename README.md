@@ -1,5 +1,8 @@
 # LinkedIn Post Organizer Chrome Extension
 
+## Deployed Link
+https://linkedin-post-organiser-lp.vercel.app/
+
 ## Overview
 The LinkedIn Post Organizer, also known as "LinkedInSaver," is a Chrome browser extension designed to enhance LinkedIn's native save functionality. It provides a robust categorization system, allowing users to organize their saved LinkedIn posts for better management and retrieval.
 
@@ -12,9 +15,9 @@ LinkedIn's default saved posts feature lacks organization, making it difficult f
 
 ## Key Features
 *   **Post Categorization**: Add category dropdowns to saved posts on LinkedIn.
-*   **Category Management**: Create, edit, and delete custom categories via the extension popup.
+*   **Category Management**: Create, edit, and delete custom categories via the extension side panel.
 *   **Visual Indicators**: Display category badges on saved posts in the main LinkedIn feed.
-*   **Intuitive Popup Interface**: A dedicated popup for managing posts and categories, including search and filter capabilities.
+*   **Intuitive Side Panel Interface**: A dedicated side panel for managing posts and categories, including search, filter by author, and real-time synchronization. It also includes a "Reset All Bookmarks" option and displays the LinkedIn post URL in the categorization modal.
 *   **Persistent Storage**: Utilizes Chrome Storage Sync API for cross-device synchronization of categories and categorized posts.
 *   **Seamless Integration**: Designed to integrate natively with LinkedIn's existing UI/UX patterns without disruption.
 
@@ -22,7 +25,7 @@ LinkedIn's default saved posts feature lacks organization, making it difficult f
 The extension follows a standard Chrome Extension (Manifest V3) architecture, comprising:
 *   **Background Script (`background/background.js`)**: Acts as a service worker, handling storage management, message passing, and initial setup.
 *   **Content Scripts (`content/content.js`, `content/content.css`)**: Injected into LinkedIn pages to manipulate the DOM, add UI elements, and listen for user interactions. It uses a `MutationObserver` to track dynamic content loading and handles LinkedIn's Single Page Application (SPA) navigation.
-*   **Popup Interface (`popup/popup.html`, `popup/popup.js`, `popup/popup.css`)**: Provides the user interface for managing categories and viewing categorized posts.
+*   **Side Panel Interface (`popup/popup.html`, `popup/popup.js`, `popup/popup.css`)**: Provides the user interface for managing categories and viewing categorized posts within the Chrome side panel.
 *   **Storage Utilities (`utils/storage.js`)**: Helper functions for interacting with Chrome's `storage.sync` API.
 
 ### Data Model
@@ -63,7 +66,7 @@ To install and run the LinkedIn Post Organizer extension in Chrome:
 
 3.  **Verify Installation**:
     *   The "LinkedIn Post Organizer" extension should now appear in your `chrome://extensions/` list.
-    *   Its icon should appear in your Chrome toolbar.
+    *   Its icon should appear in your Chrome toolbar. Clicking it will open the side panel.
 
 ## Usage
 
@@ -76,7 +79,7 @@ Once installed, the extension integrates directly with your LinkedIn experience:
 
 2.  **Manage Categories and Posts**:
     *   Click the LinkedIn Post Organizer extension icon in your Chrome toolbar.
-    *   The popup will open, allowing you to:
+    *   The side panel will open, allowing you to:
         *   View all your categorized posts.
         *   Search and filter posts by category.
         *   Create, edit, and delete custom categories.
@@ -85,7 +88,7 @@ Once installed, the extension integrates directly with your LinkedIn experience:
     *   When browsing your main LinkedIn feed, saved posts that you have categorized will display a small badge indicating their assigned category.
 
 ## Current Status
-The core functionality of the LinkedIn Post Organizer is fully implemented and ready for testing. All essential components, including the background script, content script, popup interface, and storage utilities, are complete. The extension is designed for a seamless, native-feeling integration with LinkedIn.
+The core functionality of the LinkedIn Post Organizer is fully implemented and ready for testing. All essential components, including the background script, content script, side panel interface, and storage utilities, are complete. The extension now features a side panel for managing posts and categories, a "Reset All Bookmarks" option, displays the LinkedIn post URL in the categorization modal, includes an author filter, and supports real-time UI synchronization. It is designed for a seamless, native-feeling integration with LinkedIn.
 
 ## Troubleshooting
 *   **Extension not loading**: Ensure `manifest.json` is in the root of the selected folder and has no syntax errors.
