@@ -22,6 +22,16 @@ const config = {
 let currentModal = null;
 let categories = [];
 
+// Utility function for debouncing
+function debounce(func, delay) {
+  let timeout;
+  return function(...args) {
+    const context = this;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(context, args), delay);
+  };
+}
+
 // Main initialization
 async function initialize() {
   // Only run on LinkedIn
@@ -61,22 +71,30 @@ async function initializeSavedPostsPage() {
     setupPostsObserver();
     
     // Add delayed re-initialization to catch posts that load later
+    // This is a fallback and can be less frequent
     setTimeout(async () => {
       console.log('LinkedIn Post Organizer: Re-applying categorizations after delay');
       const updatedPosts = await StorageUtils.getCategorizedPosts();
       await processAllPosts(updatedPosts);
-    }, 2000);
-    
-    // Add periodic re-check for missed posts
+    }, 3000); // Increased delay
+
+    // Add periodic re-check for missed posts (less frequent)
     setInterval(async () => {
+      console.log('LinkedIn Post Organizer: Periodic re-check for missed posts');
       const currentPosts = await StorageUtils.getCategorizedPosts();
       await processAllPosts(currentPosts);
-    }, 5000);
+    }, 10000); // Increased interval to 10 seconds
     
   } catch (error) {
     console.error('LinkedIn Post Organizer: Error initializing saved posts page:', error);
   }
 }
+
+// Debounced version of processAllPosts for observer
+const debouncedProcessAllPosts = debounce(async () => {
+  const categorizedPosts = await StorageUtils.getCategorizedPosts();
+  await processAllPosts(categorizedPosts);
+}, 500); // Debounce for 500ms
 
 // Process all posts on the page
 async function processAllPosts(categorizedPosts) {
@@ -579,12 +597,9 @@ function setupPostsObserver() {
       }
     }
     
-    // If we detected new posts, re-process all posts to catch any that were missed
+    // If we detected new posts, trigger debounced re-processing
     if (shouldReprocess) {
-      setTimeout(async () => {
-        const categorizedPosts = await StorageUtils.getCategorizedPosts();
-        await processAllPosts(categorizedPosts);
-      }, 1000);
+      debouncedProcessAllPosts();
     }
   });
   
