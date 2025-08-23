@@ -1,9 +1,9 @@
 # Active Context: LinkedIn Post Organizer
 
 ## Current Project State
-**Status**: Core functionality implemented, side panel integration complete, and reset all bookmarks option added.
-**Last Updated**: August 17, 2025
-**Current Focus**: Adding LinkedIn post URL to categorization modal and memory bank documentation.
+**Status**: Core functionality implemented, side panel integration complete, reset all bookmarks option added, and author filter implemented.
+**Last Updated**: August 23, 2025
+**Current Focus**: Memory bank documentation update.
 
 ## Recent Implementation
 The extension has been fully implemented with all core components, and the UI has been migrated from a popup to a side panel:
@@ -25,7 +25,7 @@ The extension has been fully implemented with all core components, and the UI ha
 3. **Side Panel Interface** (`popup/popup.html`, `popup.js`, `popup.css`)
    - Migrated from popup to side panel.
    - Tabbed interface for Posts and Categories management
-   - Category filtering and post search functionality
+   - Category filtering functionality
    - Modal for adding new categories with color picker
    - **UI Adjustments**: Removed fixed width/height from `body` in `popup.css` and removed the `<footer>` from `popup.html` for better side panel adaptation.
 
@@ -71,10 +71,11 @@ The extension has been fully implemented with all core components, and the UI ha
 - Side panel provides complete category and post management interface.
 - **Reset All Bookmarks**: New functionality added to clear all user data.
 - **Post URL in Modal**: Added a read-only field to display the LinkedIn post URL in the categorization modal.
+- **Author Filter**: Implemented a new dropdown in the side panel to filter posts by author.
 
 ## Potential Enhancements (Future)
 - Bulk operations for multiple posts.
 - Export/import functionality.
 - Category analytics and insights.
-- Advanced search with filters (date, author, etc.).
+- Advanced search with filters (date, etc.). (Re-introduce search by post)
 - Make the post URL field in the modal editable if users need to manually correct/add URLs.

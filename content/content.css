@@ -186,6 +186,19 @@
   background: #f8f9fa;
 }
 
+.linkedin-post-organizer-category-item input[type="checkbox"]:checked + * {
+  color: #0077b5;
+  font-weight: 600;
+}
+
+.linkedin-post-organizer-category-item:has(input[type="checkbox"]:checked),
+.linkedin-post-organizer-category-item.linkedin-post-organizer-selected {
+  background: #e7f3ff;
+  border: 1px solid #0077b5;
+  padding: 7px;
+  margin: 4px -1px;
+}
+
 .linkedin-post-organizer-category-item input[type="checkbox"] {
   margin: 0 12px 0 0;
   transform: scale(1.1);

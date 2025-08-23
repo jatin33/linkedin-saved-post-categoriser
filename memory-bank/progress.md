@@ -9,6 +9,7 @@
    - Content script injection working
    - **Side Panel Interface**: Successfully migrated from popup to side panel.
    - **Reset All Bookmarks**: Functionality to reset all categorized posts and categories to default.
+   - **Author Filter**: New dropdown to filter posts by author is implemented.
 
 2. **Storage System** ✅
    - Chrome sync storage integration
@@ -26,7 +27,7 @@
    - Professional side panel design
    - Tabbed interface (Posts/Categories)
    - Category management modal
-   - Search and filter functionality
+   - Filter functionality
 
 5. **Core Features** ✅
    - Post categorization workflow
@@ -59,7 +60,7 @@
 - [ ] Export/import functionality.
 - [ ] Custom category icons.
 - [ ] Integration with external note-taking tools.
-- [ ] Advanced search with filters (date, author, etc.).
+- [ ] Advanced search with filters (date, etc.). (Re-introduce search by post)
 - [ ] Make the post URL field in the modal editable if users need to manually correct/add URLs.
 
 ### Current Issues/Limitations

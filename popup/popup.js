@@ -16,9 +16,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Set up reset all data functionality
   setupResetAllData();
-  
-  // Set up search and filtering
-  setupFilters();
 });
 
 // Tab switching functionality
@@ -87,6 +84,9 @@ async function loadPosts() {
   
   // Populate category filter dropdown
   populateCategoryFilter(categories);
+
+  // Populate author filter dropdown
+  populateAuthorFilter(categorizedPosts);
   
   // Render each post
   postsArray.forEach(([postId, postData]) => {
@@ -100,6 +100,23 @@ async function loadPosts() {
     const postElement = createPostElement(postId, postData, postCategories);
     postsContainer.appendChild(postElement);
   });
+  
+  // Re-apply current filters after loading posts
+  setTimeout(() => {
+    const categoryFilter = document.getElementById('category-filter');
+    const authorFilter = document.getElementById('author-filter');
+    if (categoryFilter.value !== 'all' || authorFilter.value !== 'all') {
+      // Trigger filtering to apply current filter state
+      filterPosts();
+    }
+  }, 100);
+
+  // Add event listeners for filters
+  const categoryFilter = document.getElementById('category-filter');
+  categoryFilter.addEventListener('change', filterPosts);
+
+  const authorFilter = document.getElementById('author-filter');
+  authorFilter.addEventListener('change', filterPosts);
 }
 
 // Create HTML element for a post
@@ -125,12 +142,15 @@ function createPostElement(postId, postData, postCategories) {
     <div class="post-actions">
       <button class="edit-post-btn" title="Edit categories">
         <i data-feather="edit-2"></i>
+        <span>Edit</span>
       </button>
       <button class="view-post-btn" title="Open on LinkedIn">
         <i data-feather="external-link"></i>
+        <span>Visit Post</span>
       </button>
       <button class="remove-post-btn" title="Remove post">
         <i data-feather="x"></i>
+        <span>Remove</span>
       </button>
     </div>
   `;
@@ -182,48 +202,129 @@ function populateCategoryFilter(categories) {
   });
 }
 
-// Set up search and filter functionality
-function setupFilters() {
+// Populate the author filter dropdown
+function populateAuthorFilter(categorizedPosts) {
+  const filterElement = document.getElementById('author-filter');
+
+  // Clear existing options except 'All Authors'
+  while (filterElement.options.length > 1) {
+    filterElement.remove(1);
+  }
+
+  // Get unique authors
+  const authors = new Set();
+  Object.values(categorizedPosts).forEach(post => {
+    if (post.author) {
+      authors.add(post.author);
+    }
+  });
+
+  // Sort authors alphabetically
+  const sortedAuthors = Array.from(authors).sort((a, b) => a.localeCompare(b));
+
+  // Add each author as an option
+  sortedAuthors.forEach(author => {
+    const option = document.createElement('option');
+    option.value = author;
+    option.textContent = author;
+    filterElement.appendChild(option);
+  });
+}
+
+// Global filter function to be accessible from clear filters button
+async function filterPosts() {
   const categoryFilter = document.getElementById('category-filter');
-  const searchInput = document.getElementById('search-posts');
+  const authorFilter = document.getElementById('author-filter');
   
-  // Handle category filter change
-  categoryFilter.addEventListener('change', filterPosts);
+  const selectedCategory = categoryFilter.value;
+  const selectedAuthor = authorFilter.value;
   
-  // Handle search input
-  searchInput.addEventListener('input', filterPosts);
+  const postItems = document.querySelectorAll('.post-item');
+  const categories = await StorageUtils.getCategories(); // Get categories within filter function
   
-  // Function to filter posts based on category and search term
-  function filterPosts() {
-    const selectedCategory = categoryFilter.value;
-    const searchTerm = searchInput.value.toLowerCase();
+  let visibleCount = 0;
+  
+  postItems.forEach(post => {
+    // Get post data
+    const postCategoriesElements = post.querySelectorAll('.post-category'); // Get all categories for this post
+    const postAuthorElement = post.querySelector('.post-author');
     
-    const postItems = document.querySelectorAll('.post-item');
-    
-    postItems.forEach(post => {
-      // Get post data
-      const postCategory = post.querySelector('.post-category').textContent;
-      const postTitle = post.querySelector('.post-title').textContent.toLowerCase();
-      const postContent = post.querySelector('.post-content').textContent.toLowerCase();
-      const postAuthor = post.querySelector('.post-author').textContent.toLowerCase();
-      
-      // Check if post matches category filter
-      const matchesCategory = selectedCategory === 'all' || 
-                           (post.querySelector('.post-category').textContent.toLowerCase() === 
-                            categories.find(c => c.id === selectedCategory)?.name.toLowerCase());
-      
-      // Check if post matches search term
-      const matchesSearch = postTitle.includes(searchTerm) || 
-                           postContent.includes(searchTerm) || 
-                           postAuthor.includes(searchTerm);
-      
-      // Show/hide based on filters
-      if (matchesCategory && matchesSearch) {
-        post.style.display = 'block';
-      } else {
-        post.style.display = 'none';
+    // Check if post matches category filter
+    let matchesCategory = selectedCategory === 'all';
+    if (!matchesCategory) {
+      const selectedCategoryName = categories.find(c => c.id === selectedCategory)?.name.toLowerCase();
+      for (const categoryElement of postCategoriesElements) {
+        if (categoryElement.textContent.toLowerCase() === selectedCategoryName) {
+          matchesCategory = true;
+          break;
+        }
       }
-    });
+    }
+
+    // Check if post matches author filter
+    let matchesAuthor = selectedAuthor === 'all';
+    if (!matchesAuthor && postAuthorElement) {
+      matchesAuthor = postAuthorElement.textContent === selectedAuthor;
+    }
+    
+    // Show/hide based on both filters
+    if (matchesCategory && matchesAuthor) {
+      post.style.display = 'block';
+      visibleCount++;
+    } else {
+      post.style.display = 'none';
+    }
+  });
+  
+  // Update posts count display
+  updatePostsCount(visibleCount, postItems.length);
+}
+
+// Update posts count display
+function updatePostsCount(visibleCount, totalCount) {
+  const postsContainer = document.getElementById('posts-list');
+  let countDisplay = postsContainer.querySelector('.posts-count-display');
+  
+  // Remove existing count display if present
+  if (countDisplay) {
+    countDisplay.remove();
+  }
+  
+  // Only show count if filtering is active (not showing all posts)
+  const categoryFilter = document.getElementById('category-filter');
+  const authorFilter = document.getElementById('author-filter');
+
+  if (visibleCount !== totalCount || categoryFilter.value !== 'all' || authorFilter.value !== 'all') {
+    countDisplay = document.createElement('div');
+    countDisplay.className = 'posts-count-display';
+    countDisplay.innerHTML = `
+      <div style="
+        padding: 8px 12px;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        text-align: center;
+        font-size: 14px;
+        color: #666;
+      ">
+        Showing ${visibleCount} of ${totalCount} posts
+        ${visibleCount < totalCount || categoryFilter.value !== 'all' || authorFilter.value !== 'all' ? '<button id="clear-filters" style="margin-left: 8px; background: none; border: none; color: #0077b5; cursor: pointer; text-decoration: underline; font-size: 12px;">Clear filters</button>' : ''}
+      </div>
+    `;
+    
+    postsContainer.insertBefore(countDisplay, postsContainer.firstChild);
+    
+    // Add clear filters functionality
+    const clearFiltersBtn = countDisplay.querySelector('#clear-filters');
+    if (clearFiltersBtn) {
+      clearFiltersBtn.addEventListener('click', async () => {
+        document.getElementById('category-filter').value = 'all';
+        document.getElementById('author-filter').value = 'all';
+        // Trigger filter update by calling the function directly
+        await filterPosts();
+      });
+    }
   }
 }
 
@@ -241,12 +342,7 @@ async function setupCategoryManagement() {
   
   // Show add category modal
   addCategoryBtn.addEventListener('click', () => {
-    // Reset form
-    document.getElementById('category-name').value = '';
-    document.getElementById('category-color').value = '#0077B5';
-    
-    // Show modal
-    addCategoryModal.style.display = 'block';
+    showEditCategoryModal(); // Call without arguments to open in 'add' mode
   });
   
   // Close modal
@@ -256,18 +352,25 @@ async function setupCategoryManagement() {
     });
   });
   
-  // Save new category
+  // Save new or updated category
   saveCategoryBtn.addEventListener('click', async () => {
     const name = document.getElementById('category-name').value.trim();
     const color = document.getElementById('category-color').value;
+    const categoryId = saveCategoryBtn.dataset.categoryId; // Get category ID if editing
     
     if (!name) {
       alert('Please enter a category name');
       return;
     }
     
-    // Save new category
-    const result = await StorageUtils.addCategory(name, color);
+    let result;
+    if (categoryId) {
+      // Update existing category
+      result = await StorageUtils.updateCategory(categoryId, name, color);
+    } else {
+      // Add new category
+      result = await StorageUtils.addCategory(name, color);
+    }
     
     if (result.success) {
       // Close modal
@@ -278,6 +381,8 @@ async function setupCategoryManagement() {
       
       // Reload posts to update category filters
       await loadPosts();
+    } else {
+      alert(`Failed to ${categoryId ? 'update' : 'add'} category.`);
     }
   });
   
@@ -351,9 +456,38 @@ function createCategoryElement(category) {
     });
   }
   
-  // Edit category functionality could be added here
+  const editBtn = categoryElement.querySelector('.edit-category-btn');
+
+  editBtn.addEventListener('click', () => {
+    showEditCategoryModal(category);
+  });
   
   return categoryElement;
+}
+
+// Show/hide the add/edit category modal
+function showEditCategoryModal(category = null) {
+  const addCategoryModal = document.getElementById('add-category-modal');
+  const categoryNameInput = document.getElementById('category-name');
+  const categoryColorInput = document.getElementById('category-color');
+  const saveCategoryBtn = document.getElementById('save-category-btn');
+  const modalHeader = addCategoryModal.querySelector('.modal-header h2');
+
+  if (category) {
+    // Editing existing category
+    modalHeader.textContent = 'Edit Category';
+    categoryNameInput.value = category.name;
+    categoryColorInput.value = category.color;
+    saveCategoryBtn.dataset.categoryId = category.id; // Store category ID for update
+  } else {
+    // Adding new category
+    modalHeader.textContent = 'Add New Category';
+    categoryNameInput.value = '';
+    categoryColorInput.value = '#0077B5';
+    delete saveCategoryBtn.dataset.categoryId; // Clear category ID
+  }
+
+  addCategoryModal.style.display = 'block';
 }
 
 // Format date for display
@@ -543,9 +677,9 @@ function escapeHTML(str) {
   
   return str
     .toString()
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
     .replace(/'/g, '&#039;');
 }

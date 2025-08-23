@@ -44,36 +44,77 @@ async function initialize() {
 
 // Initialize on LinkedIn saved posts page
 async function initializeSavedPostsPage() {
-  // Wait for posts to load
-  await waitForElements(config.postSelector);
+  console.log('LinkedIn Post Organizer: Initializing saved posts page');
   
-  // Get all categorized posts from storage
-  const categorizedPosts = await StorageUtils.getCategorizedPosts();
-  
-  // Process each post
+  try {
+    // Wait for posts to load
+    await waitForElements(config.postSelector);
+    
+    // Get all categorized posts from storage
+    const categorizedPosts = await StorageUtils.getCategorizedPosts();
+    console.log('LinkedIn Post Organizer: Retrieved categorized posts:', Object.keys(categorizedPosts).length);
+    
+    // Initial processing of visible posts
+    await processAllPosts(categorizedPosts);
+    
+    // Set up observer for dynamically loaded content
+    setupPostsObserver();
+    
+    // Add delayed re-initialization to catch posts that load later
+    setTimeout(async () => {
+      console.log('LinkedIn Post Organizer: Re-applying categorizations after delay');
+      const updatedPosts = await StorageUtils.getCategorizedPosts();
+      await processAllPosts(updatedPosts);
+    }, 2000);
+    
+    // Add periodic re-check for missed posts
+    setInterval(async () => {
+      const currentPosts = await StorageUtils.getCategorizedPosts();
+      await processAllPosts(currentPosts);
+    }, 5000);
+    
+  } catch (error) {
+    console.error('LinkedIn Post Organizer: Error initializing saved posts page:', error);
+  }
+}
+
+// Process all posts on the page
+async function processAllPosts(categorizedPosts) {
   const posts = document.querySelectorAll(config.postSelector);
+  console.log('LinkedIn Post Organizer: Processing', posts.length, 'posts');
   
-  posts.forEach(async (post) => {
+  for (const post of posts) {
     const postId = extractPostId(post);
-    if (!postId) return;
+    if (!postId) {
+      console.warn('LinkedIn Post Organizer: Could not extract post ID for post:', post);
+      continue;
+    }
     
     // Check if post is already categorized
     const postData = categorizedPosts[postId];
+    if (postData) {
+      console.log('LinkedIn Post Organizer: Found categorized post:', postId, postData);
+    }
     
     // Add categorization UI
-    addCategorizeButton(post, postId, postData);
-  });
-  
-  // Set up observer for dynamically loaded content
-  setupPostsObserver();
+    await addCategorizeButton(post, postId, postData);
+  }
 }
 
 // Extract post ID from LinkedIn post element
 function extractPostId(postElement) {
-  // Try to get the post ID from data attribute
-  let postId = postElement.getAttribute(config.postIdAttribute);
+  // Primary: Use data-chameleon-result-urn (most reliable)
+  let postId = postElement.getAttribute('data-chameleon-result-urn');
   
-  // If not found, look for it in URN or other identifiers
+  // Secondary: Look for URN in nested elements
+  if (!postId) {
+    const urnElement = postElement.querySelector('[data-chameleon-result-urn]');
+    if (urnElement) {
+      postId = urnElement.getAttribute('data-chameleon-result-urn');
+    }
+  }
+  
+  // Tertiary: Look for other URN attributes
   if (!postId) {
     const possibleIdElements = postElement.querySelectorAll('[data-urn]');
     if (possibleIdElements.length > 0) {
@@ -81,16 +122,30 @@ function extractPostId(postElement) {
     }
   }
   
-  // Last resort: generate an ID based on content
+  // Last resort: Try to extract from post URL if available
+  if (!postId) {
+    const postLink = postElement.querySelector('a[href*="/posts/"], a[href*="/feed/update/"]');
+    if (postLink) {
+      const href = postLink.href;
+      const match = href.match(/(?:posts\/|feed\/update\/)([^\/\?]+)/);
+      if (match) {
+        postId = `urn:li:activity:${match[1]}`;
+      }
+    }
+  }
+  
+  // Final fallback: content-based ID (least reliable)
   if (!postId) {
     const author = postElement.querySelector(config.postAuthorSelector)?.textContent.trim();
     const content = postElement.querySelector(config.postContentSelector)?.textContent.trim();
     if (author && content) {
-      // Create a hash from author and truncated content
-      postId = `${author}-${content.substring(0, 50)}`.replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+      // Create a hash from author and truncated content with timestamp
+      const contentHash = btoa(`${author}-${content.substring(0, 100)}`).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+      postId = `fallback:${contentHash}`;
     }
   }
   
+  console.log('LinkedIn Post Organizer: Extracted post ID:', postId, 'for element:', postElement);
   return postId;
 }
 
@@ -99,8 +154,15 @@ function extractPostData(postElement) {
   const postLinkElement = postElement.querySelector('a[href*="/posts/"], a[href*="/feed/update/"]');
   const postUrl = postLinkElement ? postLinkElement.href : ''; // Default to empty string if no specific post URL found
 
+  // Extract title and truncate to save storage space (approximately 3-4 lines)
+  const fullTitle = postElement.querySelector(config.postTitleSelector)?.textContent.trim() || 'Untitled Post';
+  const maxTitleLength = 200; // Approximately 3-4 lines of text
+  const truncatedTitle = fullTitle.length > maxTitleLength 
+    ? fullTitle.substring(0, maxTitleLength).trim() + '...' 
+    : fullTitle;
+
   return {
-    title: postElement.querySelector(config.postTitleSelector)?.textContent.trim() || 'Untitled Post',
+    title: truncatedTitle,
     author: postElement.querySelector(config.postAuthorSelector)?.textContent.trim() || 'Unknown Author',
     content: postElement.querySelector(config.postContentSelector)?.textContent.trim() || '',
     url: postUrl, // Use the extracted post URL
@@ -112,8 +174,23 @@ function extractPostData(postElement) {
 async function addCategorizeButton(postElement, postId, existingPostData = null) {
   // Check if button already exists
   if (postElement.querySelector(`.${config.categorizeButtonClass}`)) {
+    // If button exists but no badges, and we have categorization data, add badges
+    if (existingPostData && existingPostData.categoryIds && existingPostData.categoryIds.length > 0) {
+      const existingBadges = postElement.querySelector(`.${config.categoryBadgesClass}`);
+      if (!existingBadges) {
+        const container = postElement.querySelector('.linkedin-post-organizer-container');
+        if (container) {
+          const badgesContainer = createCategoryBadges(existingPostData.categoryIds);
+          container.appendChild(badgesContainer);
+          postElement.classList.add(config.categorizedPostClass);
+          console.log('LinkedIn Post Organizer: Added missing badges to post:', postId);
+        }
+      }
+    }
     return;
   }
+  
+  console.log('LinkedIn Post Organizer: Adding categorize button to post:', postId, existingPostData ? 'with existing data' : 'without data');
   
   // Create container for button and badges
   const container = document.createElement('div');
@@ -228,6 +305,48 @@ async function showCategorizationModal(postId, postElement, existingPostData = n
   
   // Setup modal event listeners
   setupModalEventListeners(modal, postId, postElement);
+  
+  // Setup category selection highlighting
+  setupCategoryHighlighting(modal);
+}
+
+// Setup category selection highlighting
+function setupCategoryHighlighting(modal) {
+  const categoryItems = modal.querySelectorAll('.linkedin-post-organizer-category-item');
+  
+  categoryItems.forEach(item => {
+    const checkbox = item.querySelector('input[type="checkbox"]');
+    if (checkbox) {
+      // Initial state
+      updateCategoryHighlight(item, checkbox.checked);
+      
+      // Listen for changes
+      checkbox.addEventListener('change', () => {
+        updateCategoryHighlight(item, checkbox.checked);
+      });
+    }
+  });
+}
+
+// Update category item highlighting
+function updateCategoryHighlight(categoryItem, isSelected) {
+  if (isSelected) {
+    categoryItem.classList.add('linkedin-post-organizer-selected');
+  } else {
+    categoryItem.classList.remove('linkedin-post-organizer-selected');
+  }
+  
+  // Update text styling
+  const categoryName = categoryItem.querySelector('.linkedin-post-organizer-category-name');
+  if (categoryName) {
+    if (isSelected) {
+      categoryName.style.color = '#0077b5';
+      categoryName.style.fontWeight = '600';
+    } else {
+      categoryName.style.color = '#333';
+      categoryName.style.fontWeight = '500';
+    }
+  }
 }
 
 // Setup event listeners for the modal
@@ -284,6 +403,13 @@ function setupModalEventListeners(modal, postId, postElement) {
         <span class="linkedin-post-organizer-category-name">${name}</span>
       `;
       categoriesList.appendChild(newCategoryItem);
+      
+      // Setup highlighting for the new category item
+      const checkbox = newCategoryItem.querySelector('input[type="checkbox"]');
+      updateCategoryHighlight(newCategoryItem, checkbox.checked);
+      checkbox.addEventListener('change', () => {
+        updateCategoryHighlight(newCategoryItem, checkbox.checked);
+      });
       
       // Clear form
       categoryNameInput.value = '';
@@ -428,6 +554,8 @@ function getContrastColor(hexColor) {
 // Set up observer for dynamically loaded posts
 function setupPostsObserver() {
   const observer = new MutationObserver(async (mutations) => {
+    let shouldReprocess = false;
+    
     for (const mutation of mutations) {
       if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
         // Check if any added nodes are posts
@@ -435,33 +563,63 @@ function setupPostsObserver() {
           if (node.nodeType === Node.ELEMENT_NODE) {
             // Check if node is a post or contains posts
             if (node.matches && node.matches(config.postSelector)) {
-              processNewPost(node);
+              await processNewPost(node);
+              shouldReprocess = true;
             } else if (node.querySelectorAll) {
               const posts = node.querySelectorAll(config.postSelector);
-              posts.forEach(processNewPost);
+              if (posts.length > 0) {
+                for (const post of posts) {
+                  await processNewPost(post);
+                }
+                shouldReprocess = true;
+              }
             }
           }
         }
       }
     }
+    
+    // If we detected new posts, re-process all posts to catch any that were missed
+    if (shouldReprocess) {
+      setTimeout(async () => {
+        const categorizedPosts = await StorageUtils.getCategorizedPosts();
+        await processAllPosts(categorizedPosts);
+      }, 1000);
+    }
   });
   
-  // Start observing
-  const container = document.querySelector('.scaffold-finite-scroll__content') || document.body;
+  // Start observing with more comprehensive options
+  const container = document.querySelector('.scaffold-finite-scroll__content') || 
+                   document.querySelector('main') || 
+                   document.body;
   if (container) {
-    observer.observe(container, { childList: true, subtree: true });
+    observer.observe(container, { 
+      childList: true, 
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-chameleon-result-urn', 'data-urn']
+    });
+    console.log('LinkedIn Post Organizer: Observer set up on container:', container);
   }
 }
 
 // Process newly added posts
 async function processNewPost(postElement) {
   const postId = extractPostId(postElement);
-  if (!postId) return;
+  if (!postId) {
+    console.warn('LinkedIn Post Organizer: Could not extract post ID for new post:', postElement);
+    return;
+  }
+  
+  console.log('LinkedIn Post Organizer: Processing new post:', postId);
   
   // Check if we're on saved posts page
   if (window.location.pathname.includes(config.savedPostsPage)) {
     const postData = await StorageUtils.getPostCategory(postId);
-    addCategorizeButton(postElement, postId, postData);
+    if (postData) {
+      console.log('LinkedIn Post Organizer: Found existing categorization for new post:', postId, postData);
+    }
+    await addCategorizeButton(postElement, postId, postData);
   }
 }
 

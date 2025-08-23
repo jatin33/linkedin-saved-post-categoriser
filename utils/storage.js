@@ -7,10 +7,19 @@ const StorageUtils = {
    * @returns {Promise<Array>} Array of category objects
    */
   getCategories: async function() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage({ action: 'getCategories' }, (categories) => {
+        if (chrome.runtime.lastError) {
+          console.error("Error in getCategories callback:", chrome.runtime.lastError.message);
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
         resolve(categories || []);
       });
+      if (chrome.runtime.lastError) {
+        console.error("Error sending message (getCategories) immediately after call:", chrome.runtime.lastError.message);
+        reject(new Error(chrome.runtime.lastError.message));
+      }
     });
   },
   
@@ -19,10 +28,20 @@ const StorageUtils = {
    * @returns {Promise<Object>} Object with post IDs as keys and post data as values
    */
   getCategorizedPosts: async function() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage({ action: 'getCategorizedPosts' }, (posts) => {
-        resolve(posts || {});
+        if (chrome.runtime.lastError) {
+          console.error("Error in getCategorizedPosts callback:", chrome.runtime.lastError.message);
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
+        const result = posts || {};
+        resolve(result);
       });
+      if (chrome.runtime.lastError) {
+        console.error("Error sending message (getCategorizedPosts) immediately after call:", chrome.runtime.lastError.message);
+        reject(new Error(chrome.runtime.lastError.message));
+      }
     });
   },
   
@@ -34,13 +53,22 @@ const StorageUtils = {
    * @returns {Promise<Object>} Success status
    */
   savePostCategory: async function(postId, postData, categoryIds) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage({
         action: 'savePostCategory',
         data: { postId, postData, categoryIds }
       }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("Error in savePostCategory callback:", chrome.runtime.lastError.message);
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
         resolve(response);
       });
+      if (chrome.runtime.lastError) {
+        console.error("Error sending message (savePostCategory) immediately after call:", chrome.runtime.lastError.message);
+        reject(new Error(chrome.runtime.lastError.message));
+      }
     });
   },
   
@@ -50,13 +78,22 @@ const StorageUtils = {
    * @returns {Promise<Object>} Success status
    */
   removePostCategory: async function(postId) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage({
         action: 'removePostCategory',
         data: { postId }
       }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("Error in removePostCategory callback:", chrome.runtime.lastError.message);
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
         resolve(response);
       });
+      if (chrome.runtime.lastError) {
+        console.error("Error sending message (removePostCategory) immediately after call:", chrome.runtime.lastError.message);
+        reject(new Error(chrome.runtime.lastError.message));
+      }
     });
   },
   
@@ -67,13 +104,49 @@ const StorageUtils = {
    * @returns {Promise<Object>} Success status and new category
    */
   addCategory: async function(name, color) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage({
         action: 'addCategory',
         data: { name, color }
       }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("Error in addCategory callback:", chrome.runtime.lastError.message);
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
         resolve(response);
       });
+      if (chrome.runtime.lastError) {
+        console.error("Error sending message (addCategory) immediately after call:", chrome.runtime.lastError.message);
+        reject(new Error(chrome.runtime.lastError.message));
+      }
+    });
+  },
+
+  /**
+   * Update an existing category
+   * @param {string} categoryId - ID of the category to update
+   * @param {string} name - New name of the category
+   * @param {string} color - New color for the category
+   * @returns {Promise<Object>} Success status
+   */
+  updateCategory: async function(categoryId, name, color) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage({
+        action: 'updateCategory',
+        data: { categoryId, name, color }
+      }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("Error in updateCategory callback:", chrome.runtime.lastError.message);
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
+        resolve(response);
+      });
+      if (chrome.runtime.lastError) {
+        console.error("Error sending message (updateCategory) immediately after call:", chrome.runtime.lastError.message);
+        reject(new Error(chrome.runtime.lastError.message));
+      }
     });
   },
   
@@ -83,13 +156,22 @@ const StorageUtils = {
    * @returns {Promise<Object>} Success status
    */
   removeCategory: async function(categoryId) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage({
         action: 'removeCategory',
         data: { categoryId }
       }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("Error in removeCategory callback:", chrome.runtime.lastError.message);
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
         resolve(response);
       });
+      if (chrome.runtime.lastError) {
+        console.error("Error sending message (removeCategory) immediately after call:", chrome.runtime.lastError.message);
+        reject(new Error(chrome.runtime.lastError.message));
+      }
     });
   },
   
@@ -100,7 +182,8 @@ const StorageUtils = {
    */
   getPostCategory: async function(postId) {
     const posts = await this.getCategorizedPosts();
-    return posts[postId] || null;
+    const result = posts[postId] || null;
+    return result;
   },
 
   /**
@@ -122,10 +205,19 @@ const StorageUtils = {
    * @returns {Promise<Object>} Success status
    */
   resetAllData: async function() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage({ action: 'resetAllData' }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("Error in resetAllData callback:", chrome.runtime.lastError.message);
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
         resolve(response);
       });
+      if (chrome.runtime.lastError) {
+        console.error("Error sending message (resetAllData) immediately after call:", chrome.runtime.lastError.message);
+        reject(new Error(chrome.runtime.lastError.message));
+      }
     });
   }
 };

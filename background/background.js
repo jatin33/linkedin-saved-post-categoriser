@@ -48,7 +48,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   
   if (message.action === 'getCategorizedPosts') {
     chrome.storage.sync.get('categorizedPosts', (data) => {
-      sendResponse(data.categorizedPosts || {});
+      const posts = data.categorizedPosts || {};
+      sendResponse(posts);
     });
     return true;
   }
@@ -67,7 +68,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       };
       
       chrome.storage.sync.set({ categorizedPosts }, () => {
-        sendResponse({ success: true });
+        if (chrome.runtime.lastError) {
+          console.error('Background: Storage error:', chrome.runtime.lastError);
+          sendResponse({ success: false, error: chrome.runtime.lastError.message });
+        } else {
+          sendResponse({ success: true });
+        }
       });
     });
     return true;
@@ -104,6 +110,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       chrome.storage.sync.set({ categories }, () => {
         sendResponse({ success: true, category: { id, name, color } });
       });
+    });
+    return true;
+  }
+
+  if (message.action === 'updateCategory') {
+    const { categoryId, name, color } = message.data;
+
+    chrome.storage.sync.get('categories', (data) => {
+      const categories = data.categories || [];
+      const categoryIndex = categories.findIndex(cat => cat.id === categoryId);
+
+      if (categoryIndex > -1) {
+        categories[categoryIndex] = { ...categories[categoryIndex], name, color };
+        chrome.storage.sync.set({ categories }, () => {
+          sendResponse({ success: true, category: categories[categoryIndex] });
+        });
+      } else {
+        sendResponse({ success: false, error: 'Category not found' });
+      }
     });
     return true;
   }
@@ -152,7 +177,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       categories: [
         { id: 'work', name: 'Work', color: '#0077B5' },
         { id: 'learning', name: 'Learning', color: '#5851DB' },
-        { id: 'inspiration', name: 'Inspiration', color: '#FFC107' },
+        { id: 'inspiration', color: '#FFC107' },
         { id: 'networking', name: 'Networking', color: '#4CAF50' },
         { id: 'other', name: 'Other', color: '#9E9E9E' }
       ],
