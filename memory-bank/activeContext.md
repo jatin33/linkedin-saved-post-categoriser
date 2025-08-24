@@ -1,8 +1,8 @@
 # Active Context: LinkedIn Post Organizer
 
 ## Current Project State
-**Status**: Core functionality implemented, side panel integration complete, reset all bookmarks option added, and author filter implemented.
-**Last Updated**: August 23, 2025
+**Status**: Core functionality implemented, side panel integration complete, reset all bookmarks option added, and author filter implemented. Privacy policy updated to accurately reflect data handling.
+**Last Updated**: August 24, 2025
 **Current Focus**: Ensuring real-time synchronization between content script and side panel.
 
 ## Recent Implementation
@@ -76,6 +76,7 @@ The extension has been fully implemented with all core components, and the UI ha
 - **Reset All Bookmarks**: New functionality added to clear all user data.
 - **Post URL in Modal**: Added a read-only field to display the LinkedIn post URL in the categorization modal.
 - **Author Filter**: Implemented a new dropdown in the side panel to filter posts by author.
+- **Privacy Policy**: Updated to accurately reflect the collection and storage of user-generated data within Chrome's local and synchronized storage.
 
 ## Potential Enhancements (Future)
 - Bulk operations for multiple posts.
