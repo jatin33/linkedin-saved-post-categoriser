@@ -90,7 +90,7 @@ Once installed, the extension integrates directly with your LinkedIn experience:
 ## Demo Video
 Watch a quick demonstration of the LinkedIn Post Organizer in action:
 
-https://res.cloudinary.com/dvcl31tyv/video/upload/v1756019643/Screen_Recording_2025-08-24_at_12.22.32_PM_b8hza0.mov
+<video src="https://res.cloudinary.com/dvcl31tyv/video/upload/v1756019643/Screen_Recording_2025-08-24_at_12.22.32_PM_b8hza0.mov" controls width="100%"></video>
 
 ## Current Status
 The core functionality of the LinkedIn Post Organizer is fully implemented and ready for testing. All essential components, including the background script, content script, side panel interface, and storage utilities, are complete. The extension now features a side panel for managing posts and categories, a "Reset All Bookmarks" option, displays the LinkedIn post URL in the categorization modal, includes an author filter, and supports real-time UI synchronization. It is designed for a seamless, native-feeling integration with LinkedIn.
