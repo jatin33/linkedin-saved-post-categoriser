@@ -1,6 +1,6 @@
 {
   "name": "LinkedIn Post Organizer",
-  "description": "Categorize and organize your saved LinkedIn posts. All data is stored locally in your browser and synced via your Google account; no personal data is collected or transmitted externally.",
+  "description": "Categorize & organize saved LinkedIn posts. Data stored locally & synced via Google account; no external collection.",
   "version": "0.0.0.1",
   "manifest_version": 3,
   "permissions": [
